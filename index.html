@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeRisk Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .input-highlight {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+            transition: all 0.2s ease;
+        }
+        .warning-badge {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .tab-active {
+            border-bottom: 3px solid #6366f1;
+            color: #6366f1;
+            font-weight: 600;
+        }
+        .instrument-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .collapsible-content {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            overflow: hidden;
+        }
+        .collapsible-content.hidden {
+            max-height: 0;
+            opacity: 0;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #6366f1, #a855f7);
+        }
+        .dark .gradient-button {
+            background: linear-gradient(to right, #818cf8, #d8b4fe);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-gray-100 dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Dark Mode Toggle -->
+        <div class="flex justify-end mb-4">
+            <button id="darkModeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2 animate-fade-in">TradeRisk Calculator</h1>
+            <p class="text-gray-600 dark:text-gray-300 text-lg">Calculate risk, profit, and trade scenarios for Forex, Indices, Stocks, and Commodities with precision.</p>
+        </div>
+
+        <!-- Calculator Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-8 transition-all hover:shadow-xl">
+            <div class="p-6">
+                <!-- Input Section -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Account Balance -->
+                    <div class="relative">
+                        <label for="accountBalance" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 tooltip" data-tooltip="Your total account size (e.g., 10000).">
+                            Account Balance
+                        </label>
+                        <div class="relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span id="currencySymbol" class="text-gray-500 dark:text-gray-400 sm:text-sm">$</span>
+                            </div>
+                            <input type="number" 
+                                   id="accountBalance" 
+                                   class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md" 
+                                   placeholder="10000" 
+                                   min="0" 
+                                   step="0.01">
+                            <div class="absolute inset-y-0 right-0 flex items-center">
+                                <select id="accountCurrency" class="focus:ring-indigo-500 focus:border-indigo-500 h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 dark:text-gray-400 sm:text-sm rounded-md">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="GBP">GBP</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Per Trade -->
+                    <div class="relative">
+                        <label for="riskPerTrade" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 tooltip" data-tooltip="Percentage risked per trade (e.g., 1%).">
+                            Risk Per Trade (%)
+                        </label>
+                        <div class="relative rounded-md shadow-sm">
+                            <input type="number" 
+                                   id="riskPerTrade" 
+                                   class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md" 
+                                   placeholder="1" 
+                                   min="0.01" 
+                                   max="100" 
+                                   step="0.01"
+                                   value="1">
+                            <div class="absolute inset-y-0 right-0 flex items-center">
+                                <span class="text-gray-500 dark:text-gray-400 sm:text-sm mr-3">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Max Daily Loss -->
+                    <div class="relative">
+                        <label for="maxDailyLoss" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 tooltip" data-tooltip="Maximum % loss allowed in a single day (e.g., 5%).">
+                            Max Daily Loss (%)
+                        </label>
+                        <div class="relative rounded-md shadow-sm">
+                            <input type="number" 
+                                   id="maxDailyLoss" 
+                                   class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md" 
+                                   placeholder="5" 
+                                   min="0.01" 
+                                   max="100" 
+                                   step="0.01"
+                                   value="5">
+                            <div class="absolute inset-y-0 right-0 flex items-center">
+                                <span class="text-gray-500 dark:text-gray-400 sm:text-sm mr-3">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Max Drawdown -->
+                    <div class="relative">
+                        <label for="maxDrawdown" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 tooltip" data-tooltip="Total % loss before account is considered blown (e.g., 50%).">
+                            Max Drawdown (%)
+                        </label>
+                        <div class="relative rounded-md shadow-sm">
+                            <input type="number" 
+                                   id="maxDrawdown" 
+                                   class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md" 
+                                   placeholder="50" 
+                                   min="0.01" 
+                                   max="100" 
+                                   step="0.01"
+                                   value="50">
+                            <div class="absolute inset-y-0 right-0 flex items-center">
+                                <span class="text-gray-500 dark:text-gray-400 sm:text-sm mr-3">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profit Target -->
+                    <div class="relative">
+                        <label for="profitTarget" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 tooltip" data-tooltip="Overall profit goal as % of account (e.g., 100% to double).">
+                            Profit Target (%)
+                        </label>
+                        <div class="relative rounded-md shadow-sm">
+                            <input type="number" 
+                                   id="profitTarget" 
+                                   class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md" 
+                                   placeholder="100" 
+                                   min="0.01" 
+                                   max="1000" 
+                                   step="0.01"
+                                   value="100">
+                            <div class="absolute inset-y-0 right-0 flex items-center">
+                                <span class="text-gray-500 dark:text-gray-400 sm:text-sm mr-3">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk-Reward Ratio -->
+                    <div class="relative">
+                        <label for="riskRewardRatio" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 tooltip" data-tooltip="Profit multiplier per trade (e.g., 2 for 1:2).">
+                            Risk-Reward Ratio
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" 
+                                   id="riskRewardRatio" 
+                                   class="focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 pl-3 pr-8 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md" 
+                                   placeholder="2" 
+                                   min="0.1" 
+                                   max="10" 
+                                   step="0.1"
+                                   value="2">
+                            <input type="range" 
+                                   id="riskRewardSlider" 
+                                   class="w-1/2 h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer dark:bg-indigo-900" 
+                                   min="0.1" 
+                                   max="10" 
+                                   step="0.1"
+                                   value="2">
+                        </div>
+                    </div>
+
+                    <!-- Instrument Category -->
+                    <div>
+                        <label for="instrumentCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 tooltip" data-tooltip="Select asset class to trade.">
+                            Instrument Category
+                        </label>
+                        <select id="instrumentCategory" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-10 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
+                            <option value="forex">Forex & Commodities</option>
+                            <option value="indices">Indices</option>
+                            <option value="stocks">Stocks (CFDs)</option>
+                        </select>
+                    </div>
+
+                    <!-- Specific Instrument -->
+                    <div class="sm:col-span-2">
+                        <label for="specificInstrument" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 tooltip" data-tooltip="Choose a specific trading instrument.">
+                            Instrument
+                        </label>
+                        <select id="specificInstrument" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-10 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button id="calculateBtn" class="gradient-button hover:opacity-90 text-white font-medium py-2 px-6 rounded-md transition duration-300 flex items-center animate-bounce">
+                        <i class="fas fa-calculator mr-2"></i> Calculate
+                    </button>
+                    <button id="resetBtn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium py-2 px-6 rounded-md transition duration-300 flex items-center">
+                        <i class="fas fa-redo mr-2"></i> Reset
+                    </button>
+                    <button id="compareBtn" class="bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 text-white font-medium py-2 px-6 rounded-md transition duration-300 flex items-center hidden">
+                        <i class="fas fa-balance-scale mr-2"></i> Compare Scenarios
+                    </button>
+                </div>
+
+                <!-- Live Preview -->
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md mb-6 hidden" id="livePreview">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Live Preview</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Stop Loss Amount:</p>
+                            <p id="liveStopLoss" class="font-medium text-gray-900 dark:text-white">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Daily Loss Amount:</p>
+                            <p id="liveDailyLoss" class="font-medium text-gray-900 dark:text-white">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Tabs -->
+                <div class="border-b border-gray-200 dark:border-gray-600 mb-6">
+                    <nav class="-mb-px flex space-x-8">
+                        <button id="riskTab" class="tab-active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            <i class="fas fa-shield-alt mr-2"></i> Risk Analysis
+                        </button>
+                        <button id="profitTab" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                            <i class="fas fa-chart-line mr-2"></i> Profit Scenario
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Risk Results Section -->
+                <div id="riskResultsSection" class="space-y-4 animate-fade-in">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Stop Loss Amount -->
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm border-l-4 border-indigo-500 hover:shadow-md transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300">Stop Loss Amount</h4>
+                                    <p id="stopLossAmount" class="text-2xl font-bold text-gray-800 dark:text-white">$0.00</p>
+                                </div>
+                                <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full">
+                                    <i class="fas fa-stop-circle text-indigo-500 dark:text-indigo-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Daily Loss Amount -->
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm border-l-4 border-indigo-500 hover:shadow-md transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300">Daily Loss Amount</h4>
+                                    <p id="dailyLossAmount" class="text-2xl font-bold text-gray-800 dark:text-white">$0.00</p>
+                                </div>
+                                <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full">
+                                    <i class="fas fa-calendar-day text-indigo-500 dark:text-indigo-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Position Size -->
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm border-l-4 border-indigo-500 hover:shadow-md transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 id="positionSizeLabel" class="text-sm font-medium text-gray-500 dark:text-gray-300">Lot Size</h4>
+                                    <p id="positionSize" class="text-2xl font-bold text-gray-800 dark:text-white">0.00</p>
+                                </div>
+                                <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full">
+                                    <i class="fas fa-chart-bar text-indigo-500 dark:text-indigo-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Losing Trades -->
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm border-l-4 border-indigo-500 hover:shadow-md transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300">Consecutive Losing Trades</h4>
+                                    <p id="losingTrades" class="text-2xl font-bold text-gray-800 dark:text-white">0</p>
+                                </div>
+                                <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full">
+                                    <i class="fas fa-exclamation-triangle text-indigo-500 dark:text-indigo-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trades to Daily Loss -->
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm border-l-4 border-indigo-500 hover:shadow-md transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300">Trades to Daily Loss Limit</h4>
+                                    <p id="tradesToDailyLoss" class="text-2xl font-bold text-gray-800 dark:text-white">0</p>
+                                </div>
+                                <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full">
+                                    <i class="fas fa-times-circle text-indigo-500 dark:text-indigo-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instrument Details -->
+                    <div id="instrumentDetails" class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm">
+                        <button id="toggleInstrumentDetails" class="flex items-center w-full text-left text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">
+                            <i class="fas fa-chevron-down mr-2 transition-transform"></i> Instrument Details
+                        </button>
+                        <div id="instrumentDetailsContent" class="collapsible-content">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Instrument Type:</p>
+                                    <p id="instrumentType" class="font-medium text-gray-900 dark:text-white">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Pip/Point/Share Value:</p>
+                                    <p id="pipValue" class="font-medium text-gray-900 dark:text-white">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Stop Loss:</p>
+                                    <p id="stopLoss" class="font-medium text-gray-900 dark:text-white">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Risk per Unit:</p>
+                                    <p id="riskPerUnit" class="font-medium text-gray-900 dark:text-white">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Warnings -->
+                    <div id="warningsContainer"></div>
+                </div>
+
+                <!-- Profit Results Section -->
+                <div id="profitResultsSection" class="hidden space-y-4 animate-fade-in">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Profit Amount -->
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm border-l-4 border-green-500 hover:shadow-md transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300">Profit Amount per Trade</h4>
+                                    <p id="profitAmount" class="text-2xl font-bold text-gray-800 dark:text-white">$0.00</p>
+                                </div>
+                                <div class="bg-green-100 dark:bg-green-900 p-2 rounded-full">
+                                    <i class="fas fa-coins text-green-500 dark:text-green-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profit Target -->
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm border-l-4 border-green-500 hover:shadow-md transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300">Pips/Points/Shares for Profit</h4>
+                                    <p id="profitTargetUnits" class="text-2xl font-bold text-gray-800 dark:text-white">0</p>
+                                </div>
+                                <div class="bg-green-100 dark:bg-green-900 p-2 rounded-full">
+                                    <i class="fas fa-bullseye text-green-500 dark:text-green-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Winning Trades -->
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm border-l-4 border-green-500 hover:shadow-md transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300">Winning Trades to Target</h4>
+                                    <p id="winningTrades" class="text-2xl font-bold text-gray-800 dark:text-white">0</p>
+                                </div>
+                                <div class="bg-green-100 dark:bg-green-900 p-2 rounded-full">
+                                    <i class="fas fa-trophy text-green-500 dark:text-green-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profit Scenario Details -->
+                    <div id="profitScenarioDetails" class="bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">Profit Scenario Details</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Risk-Reward Ratio:</p>
+                                <p id="riskRewardDisplay" class="font-medium text-gray-900 dark:text-white">1:2</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Profit Target Amount:</p>
+                                <p id="profitTargetAmount" class="font-medium text-gray-900 dark:text-white">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Profit per Unit:</p>
+                                <p id="profitPerUnit" class="font-medium text-gray-900 dark:text-white">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Account Growth per Trade:</p>
+                                <p id="accountGrowth" class="font-medium text-gray-900 dark:text-white">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profit Warnings -->
+                    <div id="profitWarningsContainer"></div>
+                </div>
+
+                <!-- Comparison Section -->
+                <div id="comparisonSection" class="hidden mt-6 bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm">
+                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">Previous Scenario</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Stop Loss Amount:</p>
+                            <p id="prevStopLossAmount" class="font-medium text-gray-900 dark:text-white">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Daily Loss Amount:</p>
+                            <p id="prevDailyLossAmount" class="font-medium text-gray-900 dark:text-white">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Position Size:</p>
+                            <p id="prevPositionSize" class="font-medium text-gray-900 dark:text-white">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Profit Amount:</p>
+                            <p id="prevProfitAmount" class="font-medium text-gray-900 dark:text-white">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explanation Section -->
+        <div class="bg-white dark:bg-gray-700 rounded-xl shadow-lg overflow-hidden transition-all hover:shadow-xl">
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
+                    <i class="fas fa-info-circle text-indigo-500 dark:text-indigo-400 mr-2"></i> How to Use This Calculator
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full mr-4">
+                            <i class="fas fa-wallet text-indigo-500 dark:text-indigo-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-800 dark:text-white">Account Setup</h3>
+                            <p class="text-gray-600 dark:text-gray-300">Enter your account balance and select your currency (USD, EUR, GBP). Live previews update as you type.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full mr-4">
+                            <i class="fas fa-chart-pie text-indigo-500 dark:text-indigo-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-800 dark:text-white">Instrument Selection</h3>
+                            <p class="text-gray-600 dark:text-gray-300">Choose from Forex pairs, Commodities (Gold), Indices, or Stocks (CFDs). Icons indicate instrument types.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full mr-4">
+                            <i class="fas fa-sliders-h text-indigo-500 dark:text-indigo-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-800 dark:text-white">Risk Parameters</h3>
+                            <p class="text-gray-600 dark:text-gray-300">Set risk per trade (1-2%), max daily loss (3-5%), max drawdown (30-50%), profit target (e.g., 100%), and risk-reward ratio (use the slider for quick adjustments).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-indigo-50 dark:bg-indigo-900 p-4 rounded-lg mt-6">
+                        <h3 class="font-medium text-indigo-800 dark:text-indigo-200 mb-2">Understanding the Results</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-medium text-indigo-700 dark:text-indigo-300 mb-1">Risk Analysis</h4>
+                                <ul class="list-disc pl-5 space-y-1 text-indigo-700 dark:text-indigo-300">
+                                    <li><strong>Stop Loss Amount:</strong> Monetary risk per trade.</li>
+                                    <li><strong>Daily Loss Amount:</strong> Max loss allowed in a day.</li>
+                                    <li><strong>Position Size:</strong> Lot size (Forex/Gold), contracts (Indices), or shares (Stocks).</li>
+                                    <li><strong>Consecutive Losing Trades:</strong> Trades to hit max drawdown.</li>
+                                    <li><strong>Trades to Daily Loss Limit:</strong> Trades to hit daily loss limit.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-indigo-700 dark:text-indigo-300 mb-1">Profit Scenario</h4>
+                                <ul class="list-disc pl-5 space-y-1 text-indigo-700 dark:text-indigo-300">
+                                    <li><strong>Profit Amount:</strong> Potential profit per trade.</li>
+                                    <li><strong>Pips/Points/Shares:</strong> Units needed for profit.</li>
+                                    <li><strong>Winning Trades:</strong> Trades to reach profit target.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-gray-500 dark:text-gray-400 text-sm">
+            <p>Trading involves substantial risk. This calculator helps manage risk but doesn't guarantee profits.</p>
+            <p class="mt-1">© <span id="currentYear"></span> TradeRisk Calculator</p>
+        </div>
+    </div>
+
+    <script>
+        // Instrument data with pip/point/share values and stop loss assumptions
+        const instrumentData = {
+            forex: [
+                { name: "EUR/USD", type: "Forex (Major)", pipValue: 10, stopLoss: 10, baseCurrency: "EUR", quoteCurrency: "USD", icon: "€$" },
+                { name: "USD/JPY", type: "Forex (Major)", pipValue: 0.0667, stopLoss: 10, baseCurrency: "USD", quoteCurrency: "JPY", icon: "$¥" },
+                { name: "GBP/USD", type: "Forex (Major)", pipValue: 10, stopLoss: 10, baseCurrency: "GBP", quoteCurrency: "USD", icon: "£$" },
+                { name: "USD/CHF", type: "Forex (Major)", pipValue: 10, stopLoss: 10, baseCurrency: "USD", quoteCurrency: "CHF", icon: "$₣" },
+                { name: "AUD/USD", type: "Forex (Major)", pipValue: 10, stopLoss: 10, baseCurrency: "AUD", quoteCurrency: "USD", icon: "A$" },
+                { name: "USD/CAD", type: "Forex (Major)", pipValue: 10, stopLoss: 10, baseCurrency: "USD", quoteCurrency: "CAD", icon: "$C$" },
+                { name: "NZD/USD", type: "Forex (Major)", pipValue: 10, stopLoss: 10, baseCurrency: "NZD", quoteCurrency: "USD", icon: "NZ$" },
+                { name: "EUR/GBP", type: "Forex (Cross)", pipValue: 10, stopLoss: 10, baseCurrency: "EUR", quoteCurrency: "GBP", icon: "€£" },
+                { name: "EUR/JPY", type: "Forex (Cross)", pipValue: 10, stopLoss: 10, baseCurrency: "EUR", quoteCurrency: "JPY", icon: "€¥" },
+                { name: "GBP/JPY", type: "Forex (Cross)", pipValue: 10, stopLoss: 10, baseCurrency: "GBP", quoteCurrency: "JPY", icon: "£¥" },
+                { name: "EUR/CHF", type: "Forex (Cross)", pipValue: 10, stopLoss: 10, baseCurrency: "EUR", quoteCurrency: "CHF", icon: "€₣" },
+                { name: "AUD/JPY", type: "Forex (Cross)", pipValue: 10, stopLoss: 10, baseCurrency: "AUD", quoteCurrency: "JPY", icon: "A$¥" },
+                { name: "CAD/JPY", type: "Forex (Cross)", pipValue: 10, stopLoss: 10, baseCurrency: "CAD", quoteCurrency: "JPY", icon: "C$¥" },
+                { name: "NZD/JPY", type: "Forex (Cross)", pipValue: 10, stopLoss: 10, baseCurrency: "NZD", quoteCurrency: "JPY", icon: "NZ$¥" },
+                { name: "USD/HKD", type: "Forex (Exotic)", pipValue: 1.28, stopLoss: 10, baseCurrency: "USD", quoteCurrency: "HKD", icon: "$HK$" },
+                { name: "EUR/TRY", type: "Forex (Exotic)", pipValue: 0.10, stopLoss: 10, baseCurrency: "EUR", quoteCurrency: "TRY", icon: "€₺" },
+                { name: "USD/MXN", type: "Forex (Exotic)", pipValue: 0.50, stopLoss: 10, baseCurrency: "USD", quoteCurrency: "MXN", icon: "$MX$" },
+                { name: "USD/ZAR", type: "Forex (Exotic)", pipValue: 0.60, stopLoss: 10, baseCurrency: "USD", quoteCurrency: "ZAR", icon: "$R" },
+                { name: "USD/SGD", type: "Forex (Exotic)", pipValue: 7.14, stopLoss: 10, baseCurrency: "USD", quoteCurrency: "SGD", icon: "$S$" },
+                { name: "XAU/USD", type: "Commodity (Gold)", pipValue: 0.10, stopLoss: 100, baseCurrency: "XAU", quoteCurrency: "USD", icon: "🪙" }
+            ],
+            indices: [
+                { name: "US30 (Dow Jones)", type: "Index (US)", pointValue: 5, stopLoss: 5, currency: "USD", icon: "📈" },
+                { name: "S&P 500", type: "Index (US)", pointValue: 50, stopLoss: 5, currency: "USD", icon: "📈" },
+                { name: "NASDAQ 100", type: "Index (US)", pointValue: 20, stopLoss: 5, currency: "USD", icon: "📈" },
+                { name: "FTSE 100", type: "Index (UK)", pointValue: 10, stopLoss: 5, currency: "GBP", icon: "📈" },
+                { name: "DAX 40", type: "Index (Germany)", pointValue: 25, stopLoss: 5, currency: "EUR", icon: "📈" },
+                { name: "Nikkei 225", type: "Index (Japan)", pointValue: 500, stopLoss: 5, currency: "JPY", icon: "📈" },
+                { name: "Hang Seng", type: "Index (Hong Kong)", pointValue: 50, stopLoss: 5, currency: "HKD", icon: "📈" },
+                { name: "ASX 200", type: "Index (Australia)", pointValue: 25, stopLoss: 5, currency: "AUD", icon: "📈" },
+                { name: "CAC 40", type: "Index (France)", pointValue: 10, stopLoss: 5, currency: "EUR", icon: "📈" }
+            ],
+            stocks: [
+                { name: "Amazon", type: "Stock (CFD)", shareValue: 1, stopLoss: 1, currency: "USD", icon: "🛒" },
+                { name: "Tesla", type: "Stock (CFD)", shareValue: 1, stopLoss: 1, currency: "USD", icon: "🚗" },
+                { name: "Apple", type: "Stock (CFD)", shareValue: 1, stopLoss: 1, currency: "USD", icon: "🍎" },
+                { name: "Microsoft", type: "Stock (CFD)", shareValue: 1, stopLoss: 1, currency: "USD", icon: "🖥️" },
+                { name: "Google (Alphabet)", type: "Stock (CFD)", shareValue: 1, stopLoss: 1, currency: "USD", icon: "🔍" },
+                { name: "Netflix", type: "Stock (CFD)", shareValue: 1, stopLoss: 1, currency: "USD", icon: "🎥" },
+                { name: "Meta", type: "Stock (CFD)", shareValue: 1, stopLoss: 1, currency: "USD", icon: "📱" },
+                { name: "NVIDIA", type: "Stock (CFD)", shareValue: 1, stopLoss: 1, currency: "USD", icon: "💾" }
+            ]
+        };
+
+        // Exchange rates
+        const exchangeRates = {
+            USD: { USD: 1, EUR: 0.85, GBP: 0.77 },
+            EUR: { USD: 1.18, EUR: 1, GBP: 0.90 },
+            GBP: { USD: 1.30, EUR: 1.11, GBP: 1 }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const accountBalanceInput = document.getElementById('accountBalance');
+            const accountCurrencySelect = document.getElementById('accountCurrency');
+            const currencySymbol = document.getElementById('currencySymbol');
+            const riskPerTradeInput = document.getElementById('riskPerTrade');
+            const maxDailyLossInput = document.getElementById('maxDailyLoss');
+            const maxDrawdownInput = document.getElementById('maxDrawdown');
+            const profitTargetInput = document.getElementById('profitTarget');
+            const riskRewardRatioInput = document.getElementById('riskRewardRatio');
+            const riskRewardSlider = document.getElementById('riskRewardSlider');
+            const instrumentCategorySelect = document.getElementById('instrumentCategory');
+            const specificInstrumentSelect = document.getElementById('specificInstrument');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const compareBtn = document.getElementById('compareBtn');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const riskResultsSection = document.getElementById('riskResultsSection');
+            const profitResultsSection = document.getElementById('profitResultsSection');
+            const comparisonSection = document.getElementById('comparisonSection');
+            const riskTab = document.getElementById('riskTab');
+            const profitTab = document.getElementById('profitTab');
+            const stopLossAmountDisplay = document.getElementById('stopLossAmount');
+            const dailyLossAmountDisplay = document.getElementById('dailyLossAmount');
+            const positionSizeDisplay = document.getElementById('positionSize');
+            const positionSizeLabel = document.getElementById('positionSizeLabel');
+            const losingTradesDisplay = document.getElementById('losingTrades');
+            const tradesToDailyLossDisplay = document.getElementById('tradesToDailyLoss');
+            const profitAmountDisplay = document.getElementById('profitAmount');
+            const profitTargetUnitsDisplay = document.getElementById('profitTargetUnits');
+            const winningTradesDisplay = document.getElementById('winningTrades');
+            const instrumentTypeDisplay = document.getElementById('instrumentType');
+            const pipValueDisplay = document.getElementById('pipValue');
+            const stopLossDisplay = document.getElementById('stopLoss');
+            const riskPerUnitDisplay = document.getElementById('riskPerUnit');
+            const riskRewardDisplay = document.getElementById('riskRewardDisplay');
+            const profitTargetAmountDisplay = document.getElementById('profitTargetAmount');
+            const profitPerUnitDisplay = document.getElementById('profitPerUnit');
+            const accountGrowthDisplay = document.getElementById('accountGrowth');
+            const warningsContainer = document.getElementById('warningsContainer');
+            const profitWarningsContainer = document.getElementById('profitWarningsContainer');
+            const toggleInstrumentDetails = document.getElementById('toggleInstrumentDetails');
+            const instrumentDetailsContent = document.getElementById('instrumentDetailsContent');
+            const livePreview = document.getElementById('livePreview');
+            const liveStopLoss = document.getElementById('liveStopLoss');
+            const liveDailyLoss = document.getElementById('liveDailyLoss');
+            const prevStopLossAmount = document.getElementById('prevStopLossAmount');
+            const prevDailyLossAmount = document.getElementById('prevDailyLossAmount');
+            const prevPositionSize = document.getElementById('prevPositionSize');
+            const prevProfitAmount = document.getElementById('prevProfitAmount');
+
+            // Set current year
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            // Dark mode toggle
+            darkModeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                darkModeToggle.innerHTML = document.documentElement.classList.contains('dark') ? 
+                    '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            });
+
+            // Tab switching
+            riskTab.addEventListener('click', () => {
+                riskResultsSection.classList.remove('hidden');
+                profitResultsSection.classList.add('hidden');
+                comparisonSection.classList.add('hidden');
+                riskTab.classList.add('tab-active');
+                profitTab.classList.remove('tab-active');
+                profitTab.classList.add('text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 'dark:hover:text-gray-300');
+            });
+
+            profitTab.addEventListener('click', () => {
+                riskResultsSection.classList.add('hidden');
+                profitResultsSection.classList.remove('hidden');
+                comparisonSection.classList.add('hidden');
+                profitTab.classList.add('tab-active');
+                riskTab.classList.remove('tab-active');
+                riskTab.classList.add('text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 'dark:hover:text-gray-300');
+            });
+
+            // Currency symbol update
+            accountCurrencySelect.addEventListener('change', () => {
+                const currency = accountCurrencySelect.value;
+                currencySymbol.textContent = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£';
+                updateLivePreview();
+            });
+
+            // Instrument category change
+            instrumentCategorySelect.addEventListener('change', () => {
+                populateInstruments(instrumentCategorySelect.value);
+            });
+
+            // Populate instruments
+            function populateInstruments(category) {
+                specificInstrumentSelect.innerHTML = '';
+                instrumentData[category].forEach(instrument => {
+                    const option = document.createElement('option');
+                    option.value = instrument.name;
+                    option.innerHTML = `<span class="instrument-icon">${instrument.icon}</span> ${instrument.name}`;
+                    specificInstrumentSelect.appendChild(option);
+                });
+                positionSizeLabel.textContent = category === 'forex' ? 'Lot Size' : category === 'indices' ? 'Contract Size' : 'Shares';
+            }
+            populateInstruments(instrumentCategorySelect.value);
+
+            // Input highlight
+            [accountBalanceInput, riskPerTradeInput, maxDailyLossInput, maxDrawdownInput, profitTargetInput, riskRewardRatioInput].forEach(input => {
+                input.addEventListener('focus', () => input.classList.add('input-highlight'));
+                input.addEventListener('blur', () => input.classList.remove('input-highlight'));
+            });
+
+            // Risk-reward slider sync
+            riskRewardSlider.addEventListener('input', () => {
+                riskRewardRatioInput.value = riskRewardSlider.value;
+            });
+            riskRewardRatioInput.addEventListener('input', () => {
+                riskRewardSlider.value = riskRewardRatioInput.value;
+            });
+
+            // Live preview updates
+            [accountBalanceInput, riskPerTradeInput, maxDailyLossInput, accountCurrencySelect].forEach(input => {
+                input.addEventListener('input', updateLivePreview);
+            });
+
+            function updateLivePreview() {
+                const balance = parseFloat(accountBalanceInput.value) || 0;
+                const riskPerTrade = parseFloat(riskPerTradeInput.value) || 0;
+                const maxDailyLoss = parseFloat(maxDailyLossInput.value) || 0;
+                const currency = accountCurrencySelect.value;
+
+                livePreview.classList.toggle('hidden', balance <= 0);
+                liveStopLoss.textContent = balance > 0 ? formatCurrency(balance * (riskPerTrade / 100), currency) : '-';
+                liveDailyLoss.textContent = balance > 0 ? formatCurrency(balance * (maxDailyLoss / 100), currency) : '-';
+            }
+
+            // Collapsible instrument details
+            toggleInstrumentDetails.addEventListener('click', () => {
+                instrumentDetailsContent.classList.toggle('hidden');
+                toggleInstrumentDetails.querySelector('i').classList.toggle('fa-chevron-down');
+                toggleInstrumentDetails.querySelector('i').classList.toggle('fa-chevron-up');
+            });
+
+            // Calculate button
+            calculateBtn.addEventListener('click', () => {
+                if (!validateInputs()) return;
+
+                const accountBalance = parseFloat(accountBalanceInput.value);
+                const accountCurrency = accountCurrencySelect.value;
+                const riskPerTradePercent = parseFloat(riskPerTradeInput.value);
+                const maxDailyLossPercent = parseFloat(maxDailyLossInput.value);
+                const maxDrawdownPercent = parseFloat(maxDrawdownInput.value);
+                const profitTargetPercent = parseFloat(profitTargetInput.value);
+                const riskRewardRatio = parseFloat(riskRewardRatioInput.value);
+                const instrumentCategory = instrumentCategorySelect.value;
+                const selectedInstrument = specificInstrumentSelect.value;
+
+                const instrument = instrumentData[instrumentCategory].find(i => i.name === selectedInstrument);
+
+                // Calculations
+                const stopLossAmount = accountBalance * (riskPerTradePercent / 100);
+                const dailyLossAmount = accountBalance * (maxDailyLossPercent / 100);
+                const losingTrades = calculateLosingTrades(riskPerTradePercent, maxDrawdownPercent);
+                const tradesToDailyLoss = calculateLosingTrades(riskPerTradePercent, maxDailyLossPercent);
+                const positionInfo = calculatePositionSize(stopLossAmount, accountCurrency, instrument);
+                const profitAmount = stopLossAmount * riskRewardRatio;
+                const profitTargetAmount = accountBalance * (profitTargetPercent / 100);
+                const winningTrades = Math.ceil(profitTargetAmount / profitAmount);
+                const profitTargetUnits = calculateProfitTargetUnits(profitAmount, accountCurrency, instrument);
+
+                // Store results for comparison
+                sessionStorage.setItem('prevResults', JSON.stringify({
+                    stopLossAmount: formatCurrency(stopLossAmount, accountCurrency),
+                    dailyLossAmount: formatCurrency(dailyLossAmount, accountCurrency),
+                    positionSize: positionInfo.size,
+                    profitAmount: formatCurrency(profitAmount, accountCurrency)
+                }));
+                compareBtn.classList.remove('hidden');
+
+                // Display results
+                displayRiskResults(stopLossAmount, dailyLossAmount, losingTrades, tradesToDailyLoss, 
+                    riskPerTradePercent, maxDailyLossPercent, maxDrawdownPercent, instrument, positionInfo, accountCurrency);
+                displayProfitResults(profitAmount, profitTargetUnits, winningTrades, profitTargetAmount,
+                    riskRewardRatio, accountCurrency, instrument, riskPerTradePercent);
+            });
+
+            // Reset button
+            resetBtn.addEventListener('click', () => {
+                accountBalanceInput.value = '';
+                riskPerTradeInput.value = '1';
+                maxDailyLossInput.value = '5';
+                maxDrawdownInput.value = '50';
+                profitTargetInput.value = '100';
+                riskRewardRatioInput.value = '2';
+                riskRewardSlider.value = '2';
+                riskResultsSection.classList.add('hidden');
+                profitResultsSection.classList.add('hidden');
+                comparisonSection.classList.add('hidden');
+                livePreview.classList.add('hidden');
+                compareBtn.classList.add('hidden');
+                instrumentDetailsContent.classList.remove('hidden');
+                toggleInstrumentDetails.querySelector('i').classList.add('fa-chevron-down');
+                toggleInstrumentDetails.querySelector('i').classList.remove('fa-chevron-up');
+            });
+
+            // Compare button
+            compareBtn.addEventListener('click', () => {
+                const prevResults = JSON.parse(sessionStorage.getItem('prevResults') || '{}');
+                comparisonSection.classList.toggle('hidden');
+                prevStopLossAmount.textContent = prevResults.stopLossAmount || '-';
+                prevDailyLossAmount.textContent = prevResults.dailyLossAmount || '-';
+                prevPositionSize.textContent = prevResults.positionSize || '-';
+                prevProfitAmount.textContent = prevResults.profitAmount || '-';
+            });
+
+            // Validate inputs
+            function validateInputs() {
+                let isValid = true;
+                warningsContainer.innerHTML = '';
+                profitWarningsContainer.innerHTML = '';
+
+                if (!accountBalanceInput.value || !riskPerTradeInput.value || !maxDailyLossInput.value || 
+                    !maxDrawdownInput.value || !profitTargetInput.value || !riskRewardRatioInput.value) {
+                    showError('Please fill in all fields', warningsContainer);
+                    isValid = false;
+                }
+
+                if (parseFloat(accountBalanceInput.value) <= 0) {
+                    showError('Account balance must be positive', warningsContainer);
+                    isValid = false;
+                }
+
+                if (parseFloat(riskPerTradeInput.value) <= 0) {
+                    showError('Risk per trade must be positive', warningsContainer);
+                    isValid = false;
+                }
+
+                if (parseFloat(maxDailyLossInput.value) <= 0) {
+                    showError('Max daily loss must be positive', warningsContainer);
+                    isValid = false;
+                }
+
+                if (parseFloat(maxDrawdownInput.value) <= 0) {
+                    showError('Max drawdown must be positive', warningsContainer);
+                    isValid = false;
+                }
+
+                if (parseFloat(profitTargetInput.value) <= 0) {
+                    showError('Profit target must be positive', profitWarningsContainer);
+                    isValid = false;
+                }
+
+                if (parseFloat(riskRewardRatioInput.value) <= 0) {
+                    showError('Risk-reward ratio must be positive', profitWarningsContainer);
+                    isValid = false;
+                }
+
+                if (parseFloat(riskPerTradeInput.value) > parseFloat(maxDailyLossInput.value)) {
+                    showError('Risk per trade cannot exceed max daily loss', warningsContainer);
+                    isValid = false;
+                }
+
+                if (parseFloat(maxDailyLossInput.value) > parseFloat(maxDrawdownInput.value)) {
+                    showError('Max daily loss cannot exceed max drawdown', warningsContainer);
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            function showError(message, container) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'bg-red-50 dark:bg-red-900 border-l-4 border-red-500 dark:border-red-400 p-4 mb-4';
+                errorDiv.innerHTML = `
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-500 dark:text-red-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700 dark:text-red-300">${message}</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(errorDiv);
+                riskResultsSection.classList.remove('hidden');
+            }
+
+            function calculateLosingTrades(riskPerTradePercent, maxLossPercent) {
+                const numerator = Math.log(1 - (maxLossPercent / 100));
+                const denominator = Math.log(1 - (riskPerTradePercent / 100));
+                return Math.floor(numerator / denominator);
+            }
+
+            function calculatePositionSize(stopLossAmount, accountCurrency, instrument) {
+                let positionSize = 0;
+                let riskPerUnit = 0;
+                let unitValue = 0;
+                let unitType = '';
+
+                if (instrument.type.includes('Forex') || instrument.type.includes('Gold')) {
+                    const pipValueInAccountCurrency = convertCurrency(instrument.pipValue, 
+                        instrument.type.includes('Gold') ? 'USD' : (instrument.quoteCurrency || 'USD'), 
+                        accountCurrency);
+                    riskPerUnit = pipValueInAccountCurrency * instrument.stopLoss;
+                    positionSize = stopLossAmount / riskPerUnit;
+                    unitValue = pipValueInAccountCurrency;
+                    unitType = 'pip';
+                } else if (instrument.type.includes('Index')) {
+                    const pointValueInAccountCurrency = convertCurrency(instrument.pointValue, 
+                        instrument.currency, accountCurrency);
+                    riskPerUnit = pointValueInAccountCurrency * instrument.stopLoss;
+                    positionSize = stopLossAmount / riskPerUnit;
+                    unitValue = pointValueInAccountCurrency;
+                    unitType = 'point';
+                } else {
+                    const shareValueInAccountCurrency = convertCurrency(instrument.shareValue, 
+                        instrument.currency, accountCurrency);
+                    riskPerUnit = shareValueInAccountCurrency * instrument.stopLoss;
+                    positionSize = stopLossAmount / riskPerUnit;
+                    unitValue = shareValueInAccountCurrency;
+                    unitType = 'share';
+                }
+
+                positionSize = unitType === 'share' ? Math.round(positionSize) : Math.round(positionSize * 10) / 10;
+                return { size: positionSize, riskPerUnit, unitValue, unitType };
+            }
+
+            function calculateProfitTargetUnits(profitAmount, accountCurrency, instrument) {
+                let units = 0;
+                if (instrument.type.includes('Forex') || instrument.type.includes('Gold')) {
+                    const pipValueInAccountCurrency = convertCurrency(instrument.pipValue, 
+                        instrument.type.includes('Gold') ? 'USD' : (instrument.quoteCurrency || 'USD'), 
+                        accountCurrency);
+                    units = profitAmount / pipValueInAccountCurrency;
+                } else if (instrument.type.includes('Index')) {
+                    const pointValueInAccountCurrency = convertCurrency(instrument.pointValue, 
+                        instrument.currency, accountCurrency);
+                    units = profitAmount / pointValueInAccountCurrency;
+                } else {
+                    const shareValueInAccountCurrency = convertCurrency(instrument.shareValue, 
+                        instrument.currency, accountCurrency);
+                    units = profitAmount / shareValueInAccountCurrency;
+                }
+                return Math.round(units * 100) / 100;
+            }
+
+            function convertCurrency(amount, fromCurrency, toCurrency) {
+                if (fromCurrency === toCurrency) return amount;
+                return amount * exchangeRates[fromCurrency][toCurrency];
+            }
+
+            function formatCurrency(amount, currency) {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: currency,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(amount);
+            }
+
+            function displayRiskResults(stopLossAmount, dailyLossAmount, losingTrades, tradesToDailyLoss, 
+                                       riskPerTradePercent, maxDailyLossPercent, maxDrawdownPercent, 
+                                       instrument, positionInfo, accountCurrency) {
+                stopLossAmountDisplay.textContent = formatCurrency(stopLossAmount, accountCurrency);
+                dailyLossAmountDisplay.textContent = formatCurrency(dailyLossAmount, accountCurrency);
+                positionSizeDisplay.textContent = positionInfo.size;
+                losingTradesDisplay.textContent = losingTrades;
+                tradesToDailyLossDisplay.textContent = tradesToDailyLoss;
+                instrumentTypeDisplay.textContent = instrument.type;
+
+                if (instrument.type.includes('Forex') || instrument.type.includes('Gold')) {
+                    pipValueDisplay.textContent = formatCurrency(positionInfo.unitValue, accountCurrency) + '/pip';
+                    stopLossDisplay.textContent = instrument.stopLoss + ' pips';
+                    riskPerUnitDisplay.textContent = formatCurrency(positionInfo.riskPerUnit, accountCurrency) + '/lot';
+                } else if (instrument.type.includes('Index')) {
+                    pipValueDisplay.textContent = formatCurrency(positionInfo.unitValue, accountCurrency) + '/point';
+                    stopLossDisplay.textContent = instrument.stopLoss + ' points';
+                    riskPerUnitDisplay.textContent = formatCurrency(positionInfo.riskPerUnit, accountCurrency) + '/contract';
+                } else {
+                    pipValueDisplay.textContent = formatCurrency(positionInfo.unitValue, accountCurrency) + '/share';
+                    stopLossDisplay.textContent = instrument.stopLoss + ' $/share';
+                    riskPerUnitDisplay.textContent = formatCurrency(positionInfo.riskPerUnit, accountCurrency) + '/share';
+                }
+
+                const riskWarnings = [];
+                if (riskPerTradePercent > 2) {
+                    riskWarnings.push({
+                        title: 'High Risk Per Trade',
+                        message: `Risking ${riskPerTradePercent}% per trade is high. Consider 1-2%.`,
+                        icon: 'exclamation-triangle',
+                        color: 'yellow'
+                    });
+                }
+                if (maxDailyLossPercent > 5) {
+                    riskWarnings.push({
+                        title: 'High Daily Loss Limit',
+                        message: `A ${maxDailyLossPercent}% daily loss is high. Consider 3-5%.`,
+                        icon: 'calendar-day',
+                        color: 'yellow'
+                    });
+                }
+                if (maxDrawdownPercent > 75) {
+                    riskWarnings.push({
+                        title: 'Extreme Max Drawdown',
+                        message: `A ${maxDrawdownPercent}% drawdown is very high. Consider 30-50%.`,
+                        icon: 'shield-alt',
+                        color: 'red'
+                    });
+                }
+                if (losingTrades < 20) {
+                    riskWarnings.push({
+                        title: 'Low Trade Buffer',
+                        message: `Only ${losingTrades} losses to max drawdown. Reduce risk per trade.`,
+                        icon: 'chart-line',
+                        color: 'yellow'
+                    });
+                }
+                if (tradesToDailyLoss < 10) {
+                    riskWarnings.push({
+                        title: 'Low Daily Trade Buffer',
+                        message: `Only ${tradesToDailyLoss} losses to daily limit. Reduce risk per trade.`,
+                        icon: 'times-circle',
+                        color: 'yellow'
+                    });
+                }
+
+                displayWarnings(riskWarnings, warningsContainer);
+                riskResultsSection.classList.remove('hidden');
+            }
+
+            function displayProfitResults(profitAmount, profitTargetUnits, winningTrades, profitTargetAmount,
+                                          riskRewardRatio, accountCurrency, instrument, riskPerTradePercent) {
+                profitAmountDisplay.textContent = formatCurrency(profitAmount, accountCurrency);
+                profitTargetUnitsDisplay.textContent = profitTargetUnits;
+                winningTradesDisplay.textContent = winningTrades;
+                riskRewardDisplay.textContent = `1:${riskRewardRatio}`;
+                profitTargetAmountDisplay.textContent = formatCurrency(profitTargetAmount, accountCurrency);
+
+                let profitPerUnit = 0;
+                if (instrument.type.includes('Forex') || instrument.type.includes('Gold')) {
+                    const pipValueInAccountCurrency = convertCurrency(instrument.pipValue, 
+                        instrument.type.includes('Gold') ? 'USD' : (instrument.quoteCurrency || 'USD'), 
+                        accountCurrency);
+                    profitPerUnit = pipValueInAccountCurrency * riskRewardRatio;
+                    profitPerUnitDisplay.textContent = formatCurrency(profitPerUnit, accountCurrency) + '/pip';
+                } else if (instrument.type.includes('Index')) {
+                    const pointValueInAccountCurrency = convertCurrency(instrument.pointValue, 
+                        instrument.currency, accountCurrency);
+                    profitPerUnit = pointValueInAccountCurrency * riskRewardRatio;
+                    profitPerUnitDisplay.textContent = formatCurrency(profitPerUnit, accountCurrency) + '/point';
+                } else {
+                    const shareValueInAccountCurrency = convertCurrency(instrument.shareValue, 
+                        instrument.currency, accountCurrency);
+                    profitPerUnit = shareValueInAccountCurrency * riskRewardRatio;
+                    profitPerUnitDisplay.textContent = formatCurrency(profitPerUnit, accountCurrency) + '/share';
+                }
+
+                const accountGrowth = riskPerTradePercent * riskRewardRatio;
+                accountGrowthDisplay.textContent = `${accountGrowth.toFixed(2)}% per trade`;
+
+                const profitWarnings = [];
